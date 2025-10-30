@@ -22,7 +22,7 @@ fastify.register(fastifyWs);
 
 // Constants
 const SYSTEM_MESSAGE = 'Você é um assistente virtual brasileiro amigável e prestativo. Você sempre responde em português do Brasil de forma natural e conversacional. Ajude o usuário com suas perguntas e seja educado.';
-const VOICE = 'nova';
+const VOICE = 'shimmer';
 const TEMPERATURE = 0.8; // Controls the randomness of the AI's responses
 const PORT = process.env.PORT || 5050; // Allow dynamic port assignment
 
