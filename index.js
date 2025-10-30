@@ -22,8 +22,8 @@ fastify.register(fastifyWs);
 
 // Constants
 const SYSTEM_MESSAGE = 'Você é um assistente virtual brasileiro amigável e prestativo. Você sempre responde em português do Brasil de forma natural e conversacional. Ajude o usuário com suas perguntas e seja educado.';
-const VOICE = 'alloy';
-const TEMPERATURE = 0.8; // Controls the randomness of the AI's responses
+const VOICE = 'nova';
+const TEMPERATURE = 0.9; // Controls the randomness of the AI's responses
 const PORT = process.env.PORT || 5050; // Allow dynamic port assignment
 
 // List of Event Types to log to the console. See the OpenAI Realtime API Documentation: https://platform.openai.com/docs/api-reference/realtime
@@ -101,24 +101,24 @@ fastify.register(async (fastify) => {
             openAiWs.send(JSON.stringify(sessionUpdate));
 
             // Uncomment the following line to have AI speak first:
-            // sendInitialConversationItem();
+        sendInitialConversationItem();
         };
 
         // Send initial conversation item if AI talks first
         const sendInitialConversationItem = () => {
-            const initialConversationItem = {
-                type: 'conversation.item.create',
-                item: {
-                    type: 'message',
-                    role: 'user',
-                    content: [
-                        {
-                            type: 'input_text',
-                            text: 'Greet the user with "Hello there! I am an AI voice assistant powered by Twilio and the OpenAI Realtime API. You can ask me for facts, jokes, or anything you can imagine. How can I help you?"'
-                        }
-                    ]
+    const initialConversationItem = {
+        type: 'conversation.item.create',
+        item: {
+            type: 'message',
+            role: 'user',
+            content: [
+                {
+                    type: 'input_text',
+                    text: 'Diga: Oi, tudo bem? sou uma agente speetch to speetch da Olos. Como posso ajudar você hoje?'
                 }
-            };
+            ]
+        }
+    };
 
             if (SHOW_TIMING_MATH) console.log('Sending initial conversation item:', JSON.stringify(initialConversationItem));
             openAiWs.send(JSON.stringify(initialConversationItem));
