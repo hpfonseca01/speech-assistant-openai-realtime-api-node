@@ -52,7 +52,7 @@ fastify.get('/', async (request, reply) => {
 fastify.all('/incoming-call', async (request, reply) => {
     const twimlResponse = `<?xml version="1.0" encoding="UTF-8"?>
                           <Response>
-                              <Say voice="Polly.Camila" language="pt-BR">Olá! Aguarde enquanto conectamos você com nosso assistente virtual.</Say>
+                              <Say voice="Polly.Camila" language="pt-BR">Olá! Aguarde enquanto conectamos você com nosso assistente virtual da Olos.</Say>
                               <Pause length="1"/>
                               <Say voice="Polly.Camila" language="pt-BR">Pode falar!</Say>
                               <Connect>
