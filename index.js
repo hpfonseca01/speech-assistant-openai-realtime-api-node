@@ -167,6 +167,20 @@ Quando o acordo for fechado, use a seguinte função para registrar:
 - Data do pagamento
 - Contato do cliente
 
+=== REGISTRO DO RESULTADO ===
+
+IMPORTANTE: Ao finalizar a negociação, você DEVE usar a ferramenta "registrar_resultado_chamada" para documentar o resultado.
+
+SEMPRE registre ANTES de encerrar a ligação!
+
+Exemplos:
+- Cliente aceitou pagar à vista: registrar_resultado_chamada(resultado="acordo_pagamento_vista", valor_acordado=1500, data_pagamento="15/12/2024")
+- Cliente vai parcelar: registrar_resultado_chamada(resultado="acordo_parcelado", valor_acordado=1500, numero_parcelas=3, data_pagamento="15/12/2024")
+- Cliente disse que não tem condições: registrar_resultado_chamada(resultado="nao_tem_condicoes", observacoes="Cliente desempregado há 3 meses")
+- Cliente contestou a dívida: registrar_resultado_chamada(resultado="contestou_divida", observacoes="Afirma que já pagou em outubro")
+
+SEMPRE use esta ferramenta antes de se despedir!
+
 Mantenha sempre o profissionalismo e lembre-se: seu objetivo é RESOLVER, não apenas cobrar.`;
 const VOICE = 'ballad';
 const TEMPERATURE = 0.6; // Controls the randomness of the AI's responses
@@ -281,6 +295,7 @@ fastify.register(async (fastify) => {
                         output: { format: { type: 'audio/pcmu' }, voice: VOICE },
                     },
                     instructions: SYSTEM_MESSAGE,
+                    tools: tools
                 },
             };
 
@@ -353,7 +368,41 @@ fastify.register(async (fastify) => {
                 markQueue.push('responsePart');
             }
         };
-
+        
+const tools = [
+    {
+        type: "function",
+        name: "registrar_resultado_chamada",
+        description: "Registra o resultado final da chamada de cobrança",
+        parameters: {
+            type: "object",
+            properties: {
+                resultado: {
+                    type: "string",
+                    enum: ["acordo_pagamento_vista", "acordo_parcelado", "promessa_pagamento", "nao_tem_condicoes", "nao_atendeu", "recusou_negociar", "contestou_divida", "numero_errado"],
+                    description: "Resultado da negociação"
+                },
+                valor_acordado: {
+                    type: "number",
+                    description: "Valor acordado em reais (se houver acordo)"
+                },
+                data_pagamento: {
+                    type: "string",
+                    description: "Data prometida para pagamento (formato DD/MM/YYYY)"
+                },
+                numero_parcelas: {
+                    type: "integer",
+                    description: "Número de parcelas acordadas (se parcelado)"
+                },
+                observacoes: {
+                    type: "string",
+                    description: "Observações importantes sobre a negociação"
+                }
+            },
+            required: ["resultado"]
+        }
+    }
+];
         // Open event for OpenAI WebSocket
         openAiWs.on('open', () => {
             console.log('Connected to the OpenAI Realtime API');
@@ -374,6 +423,40 @@ fastify.register(async (fastify) => {
                         event: 'media',
                         streamSid: streamSid,
                         media: { payload: response.delta }
+
+                         // Quando a IA quer registrar o resultado
+        if (response.type === 'response.function_call_arguments.done') {
+            if (response.name === 'registrar_resultado_chamada') {
+                const args = JSON.parse(response.arguments);
+                
+                console.log('📋 IA REGISTRANDO RESULTADO:', args);
+                
+                // ATUALIZAR DADOS DA CHAMADA
+                dadosChamada.resultado = args.resultado;
+                dadosChamada.acordo = {
+                    valor: args.valor_acordado || null,
+                    data_pagamento: args.data_pagamento || null,
+                    parcelas: args.numero_parcelas || null
+                };
+                dadosChamada.observacoes = args.observacoes || '';
+
+                // Confirmar para a IA
+                openAiWs.send(JSON.stringify({
+                    type: 'conversation.item.create',
+                    item: {
+                        type: 'function_call_output',
+                        call_id: response.call_id,
+                        output: JSON.stringify({ 
+                            status: 'sucesso',
+                            mensagem: 'Resultado registrado com sucesso'
+                        })
+                    }
+                }));
+
+                 // Pedir para IA gerar resposta
+                openAiWs.send(JSON.stringify({ type: 'response.create' }));
+            }
+        }
                     };
                     connection.send(JSON.stringify(audioDelta));
 
