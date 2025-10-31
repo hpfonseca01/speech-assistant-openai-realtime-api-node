@@ -228,18 +228,62 @@ import path from 'path';
 
 // Função para salvar tabulação
 function salvarTabulacao(dados) {
+    // Salvar arquivo
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
     const filename = `tabulacao_${timestamp}.json`;
     const filepath = path.join('/tmp', filename);
     
     try {
         fs.writeFileSync(filepath, JSON.stringify(dados, null, 2));
-        console.log('✅ Tabulação salva:', filename);
-        return filepath;
     } catch (error) {
-        console.error('❌ Erro ao salvar:', error);
-        return null;
+        console.error('❌ Erro ao salvar arquivo:', error);
     }
+    
+    // Mostrar nos logs de forma VISUAL
+    console.log('');
+    console.log('');
+    console.log('🎯🎯🎯🎯🎯🎯🎯🎯🎯🎯🎯🎯🎯🎯🎯🎯🎯🎯🎯🎯🎯🎯🎯🎯🎯🎯');
+    console.log('=============== 📊 TABULAÇÃO DA CHAMADA ===============');
+    console.log('🎯🎯🎯🎯🎯🎯🎯🎯🎯🎯🎯🎯🎯🎯🎯🎯🎯🎯🎯🎯🎯🎯🎯🎯🎯🎯');
+    console.log('');
+    console.log('📋 DADOS DO CLIENTE:');
+    console.log('   👤 Nome:', dados.cliente.nome);
+    console.log('   💰 Valor da dívida: R$', dados.cliente.valor_divida);
+    console.log('   🏢 Empresa:', dados.cliente.empresa);
+    console.log('   📅 Vencimento:', dados.cliente.data_vencimento);
+    console.log('   📄 Contrato:', dados.cliente.contrato);
+    console.log('');
+    console.log('⏱️  INFORMAÇÕES DA CHAMADA:');
+    console.log('   🕐 Duração:', dados.duracao_segundos, 'segundos');
+    console.log('   🆔 Call SID:', dados.callSid);
+    console.log('   ▶️  Início:', dados.inicio);
+    console.log('   ⏹️  Fim:', dados.fim);
+    console.log('');
+    console.log('✅ RESULTADO DA NEGOCIAÇÃO:');
+    console.log('   📊 Status:', dados.resultado);
+    
+    if (dados.acordo && dados.acordo.valor) {
+        console.log('');
+        console.log('   💵 ACORDO FECHADO:');
+        console.log('      💰 Valor acordado: R$', dados.acordo.valor);
+        console.log('      📅 Data pagamento:', dados.acordo.data_pagamento);
+        console.log('      🔢 Parcelas:', dados.acordo.parcelas || 'À vista (1x)');
+    }
+    
+    if (dados.observacoes) {
+        console.log('');
+        console.log('   📝 Observações:', dados.observacoes);
+    }
+    
+    console.log('');
+    console.log('📄 JSON COMPLETO:');
+    console.log(JSON.stringify(dados, null, 2));
+    console.log('');
+    console.log('✅ Arquivo salvo:', filename);
+    console.log('🎯🎯🎯🎯🎯🎯🎯🎯🎯🎯🎯🎯🎯🎯🎯🎯🎯🎯🎯🎯🎯🎯🎯🎯🎯🎯');
+    console.log('');
+    
+    return filepath;
 }
 
 // Root Route
