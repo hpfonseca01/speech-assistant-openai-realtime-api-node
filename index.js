@@ -423,40 +423,6 @@ const tools = [
                         event: 'media',
                         streamSid: streamSid,
                         media: { payload: response.delta }
-
-                         // Quando a IA quer registrar o resultado
-        if (response.type === 'response.function_call_arguments.done') {
-            if (response.name === 'registrar_resultado_chamada') {
-                const args = JSON.parse(response.arguments);
-                
-                console.log('📋 IA REGISTRANDO RESULTADO:', args);
-                
-                // ATUALIZAR DADOS DA CHAMADA
-                dadosChamada.resultado = args.resultado;
-                dadosChamada.acordo = {
-                    valor: args.valor_acordado || null,
-                    data_pagamento: args.data_pagamento || null,
-                    parcelas: args.numero_parcelas || null
-                };
-                dadosChamada.observacoes = args.observacoes || '';
-
-                // Confirmar para a IA
-                openAiWs.send(JSON.stringify({
-                    type: 'conversation.item.create',
-                    item: {
-                        type: 'function_call_output',
-                        call_id: response.call_id,
-                        output: JSON.stringify({ 
-                            status: 'sucesso',
-                            mensagem: 'Resultado registrado com sucesso'
-                        })
-                    }
-                }));
-
-                 // Pedir para IA gerar resposta
-                openAiWs.send(JSON.stringify({ type: 'response.create' }));
-            }
-        }
                     };
                     connection.send(JSON.stringify(audioDelta));
 
