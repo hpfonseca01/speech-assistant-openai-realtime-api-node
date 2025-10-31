@@ -264,20 +264,27 @@ fastify.register(async (fastify) => {
 
         // Control initial session with OpenAI
         const initializeSession = () => {
-            const sessionUpdate = {
-                type: 'session.update',
-                session: {
-                    type: 'realtime',
-                    model: "gpt-4o-realtime-preview-2024-10-01",
-                    output_modalities: ["audio"],
-                    audio: {
-                        input: { format: { type: 'audio/pcmu' }, turn_detection: { type: "server_vad" } },
-                        output: { format: { type: 'audio/pcmu' }, voice: VOICE },
-                    },
-                    instructions: SYSTEM_MESSAGE,
-                    tools: tools
-                },
-            };
+          const sessionUpdate = {
+        type: 'session.update',
+        session: {
+            type: 'realtime',
+            model: "gpt-4o-realtime-preview-2024-10-01",
+            output_modalities: ["audio"],
+            audio: {
+                input: { format: { type: 'audio/pcmu' }, turn_detection: { type: "server_vad" } },
+                output: { format: { type: 'audio/pcmu' }, voice: VOICE },
+            },
+            instructions: SYSTEM_MESSAGE,
+            tools: tools,
+            
+            // ✨ NOVAS LINHAS:
+            max_response_output_tokens: 1300,
+            truncation_strategy: {
+                type: 'auto',
+                last_messages: 4
+            }
+        },
+    };
 
             console.log('Sending session update:', JSON.stringify(sessionUpdate));
             openAiWs.send(JSON.stringify(sessionUpdate));
@@ -291,14 +298,7 @@ fastify.register(async (fastify) => {
                 role: 'system',
                 content: [{
                     type: 'input_text',
-                    text: `DADOS DESTA CHAMADA:
-Nome: ${DADOS_CLIENTE_TESTE.nome}
-Dívida: R$ ${DADOS_CLIENTE_TESTE.valor}
-Vencimento: ${DADOS_CLIENTE_TESTE.data}
-Empresa: ${DADOS_CLIENTE_TESTE.empresa}
-Contrato: ${DADOS_CLIENTE_TESTE.contrato}
-
-Use [NOME] para ${DADOS_CLIENTE_TESTE.nome}, [VALOR] para R$ ${DADOS_CLIENTE_TESTE.valor}, etc.`
+                    text: `[NOME]=${DADOS_CLIENTE_TESTE.nome},[VALOR]=R$${DADOS_CLIENTE_TESTE.valor},[EMPRESA]=${DADOS_CLIENTE_TESTE.empresa},[DATA]=${DADOS_CLIENTE_TESTE.data}`
                 }]
             }
         }));
