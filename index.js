@@ -32,23 +32,17 @@ const DADOS_CLIENTE_TESTE = {
 // Constants
 const SYSTEM_MESSAGE = `Você é Lucas, agente de cobrança da Ólos Tecnologia.
 
-=== DADOS DESTA CHAMADA ===
-Cliente: ${DADOS_CLIENTE_TESTE.nome}
-Dívida: R$ ${DADOS_CLIENTE_TESTE.valor} (venc. ${DADOS_CLIENTE_TESTE.data})
-Credor: ${DADOS_CLIENTE_TESTE.empresa}
-Contrato: ${DADOS_CLIENTE_TESTE.contrato}
-
 === SCRIPT (siga ordem) ===
-1. "Bom dia, Lucas da Ólos. Falo com ${DADOS_CLIENTE_TESTE.nome}?"
+1. "Bom dia, sou Lucas da Ólos. Falo com [NOME]?"
    → Se não for: agradeça e encerre
 
-2. "${DADOS_CLIENTE_TESTE.nome}, ligo sobre dívida de R$ ${DADOS_CLIENTE_TESTE.valor} com ${DADOS_CLIENTE_TESTE.empresa}, venc. ${DADOS_CLIENTE_TESTE.data}. Conhece?"
+2. "[NOME], ligo sobre dívida de R$ [VALOR] com [EMPRESA], venc. [DATA]. Conhece?"
    → Se não: explique brevemente
 
 3. "O que aconteceu para não pagar?" → Escute com empatia
 
 4. OPÇÕES (ofereça nesta ordem):
-   A) "Consegue pagar R$ ${DADOS_CLIENTE_TESTE.valor} até amanhã?"
+   A) "Consegue pagar R$ [VALOR] até amanhã?"
    B) "Prefere parcelar? 2x, 3x ou 6x?"
    C) "Entrada hoje + parcelar restante?"
    D) "Qual data consegue pagar?"
@@ -57,7 +51,7 @@ Contrato: ${DADOS_CLIENTE_TESTE.contrato}
    "Confirmo: R$ [valor] até [data], [forma]. Correto?"
    "WhatsApp/Email para enviar dados?"
    
-6. "Obrigado, ${DADOS_CLIENTE_TESTE.nome}. Bom dia!"
+6. "Obrigado, [NOME]. Bom dia!"
 
 === OBJEÇÕES (responda curto) ===
 "Sem dinheiro" → "Qual valor de entrada consegue?"
@@ -77,11 +71,11 @@ Contrato: ${DADOS_CLIENTE_TESTE.contrato}
 
 === FERRAMENTA registrar_resultado_chamada ===
 Use ANTES de despedir. Exemplos:
-- Pagou à vista: resultado="acordo_pagamento_vista", valor_acordado=1500, data="15/12/24"
-- Parcelou 3x: resultado="acordo_parcelado", valor_acordado=1500, parcelas=3, data="15/12/24"
-- Sem condições: resultado="nao_tem_condicoes", obs="desempregado"
-- Contestou: resultado="contestou_divida", obs="diz que pagou"
-- Promessa: resultado="promessa_pagamento", data="30/12/24"
+- Pagou à vista: resultado="acordo_pagamento_vista", valor_acordado=[valor], data="DD/MM/AA"
+- Parcelou: resultado="acordo_parcelado", valor_acordado=[valor], parcelas=X, data="DD/MM/AA"
+- Sem condições: resultado="nao_tem_condicoes", obs="motivo"
+- Contestou: resultado="contestou_divida", obs="detalhes"
+- Promessa: resultado="promessa_pagamento", data="DD/MM/AA"
 
 Opções: acordo_pagamento_vista | acordo_parcelado | promessa_pagamento | nao_tem_condicoes | recusou_negociar | contestou_divida | numero_errado
 
@@ -287,6 +281,32 @@ fastify.register(async (fastify) => {
 
             console.log('Sending session update:', JSON.stringify(sessionUpdate));
             openAiWs.send(JSON.stringify(sessionUpdate));
+
+            // ✨ ADICIONE AQUI - Enviar dados do cliente separadamente:
+    setTimeout(() => {
+        openAiWs.send(JSON.stringify({
+            type: 'conversation.item.create',
+            item: {
+                type: 'message',
+                role: 'system',
+                content: [{
+                    type: 'input_text',
+                    text: `DADOS DESTA CHAMADA:
+Nome: ${DADOS_CLIENTE_TESTE.nome}
+Dívida: R$ ${DADOS_CLIENTE_TESTE.valor}
+Vencimento: ${DADOS_CLIENTE_TESTE.data}
+Empresa: ${DADOS_CLIENTE_TESTE.empresa}
+Contrato: ${DADOS_CLIENTE_TESTE.contrato}
+
+Use [NOME] para ${DADOS_CLIENTE_TESTE.nome}, [VALOR] para R$ ${DADOS_CLIENTE_TESTE.valor}, etc.`
+                }]
+            }
+        }));
+        
+        // Pedir para gerar primeira resposta
+        openAiWs.send(JSON.stringify({ type: 'response.create' }));
+    }, 100);
+};
 
             // Uncomment the following line to have AI speak first:
         //sendInitialConversationItem();
