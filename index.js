@@ -188,6 +188,25 @@ const LOG_EVENT_TYPES = [
 // Show AI response elapsed timing calculations
 const SHOW_TIMING_MATH = false;
 
+const fs = require('fs');
+const path = require('path');
+
+// Função para salvar tabulação
+function salvarTabulacao(dados) {
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const filename = `tabulacao_${timestamp}.json`;
+    const filepath = path.join('/tmp', filename);
+    
+    try {
+        fs.writeFileSync(filepath, JSON.stringify(dados, null, 2));
+        console.log('✅ Tabulação salva:', filename);
+        return filepath;
+    } catch (error) {
+        console.error('❌ Erro ao salvar:', error);
+        return null;
+    }
+}
+
 // Root Route
 fastify.get('/', async (request, reply) => {
     reply.send({ message: 'Twilio Media Stream Server is running!' });
@@ -213,7 +232,29 @@ fastify.all('/incoming-call', async (request, reply) => {
 fastify.register(async (fastify) => {
     fastify.get('/media-stream', { websocket: true }, (connection, req) => {
         console.log('Client connected');
-
+        
+// ========================================
+        // 📊 DADOS PARA TABULAÇÃO
+        // ========================================
+        let dadosChamada = {
+            inicio: new Date().toISOString(),
+            fim: null,
+            duracao_segundos: 0,
+            cliente: {
+                nome: DADOS_CLIENTE_TESTE.nome,
+                valor_divida: DADOS_CLIENTE_TESTE.valor,
+                empresa: DADOS_CLIENTE_TESTE.empresa,
+                data_vencimento: DADOS_CLIENTE_TESTE.data,
+                contrato: DADOS_CLIENTE_TESTE.contrato
+            },
+            resultado: 'em_andamento',
+            acordo: null,
+            observacoes: '',
+            transcricao: []
+        };
+        
+        let callSid = null;
+        
         // Connection-specific state
         let streamSid = null;
         let latestMediaTimestamp = 0;
@@ -377,6 +418,8 @@ fastify.register(async (fastify) => {
                     case 'start':
                         streamSid = data.start.streamSid;
                         console.log('Incoming stream has started', streamSid);
+                        callSid = data.start.callSid;
+console.log('Call SID:', callSid);
 
                         // Reset start and media timestamp on a new stream
                         responseStartTimestampTwilio = null; 
@@ -398,6 +441,19 @@ fastify.register(async (fastify) => {
 
         // Handle connection close
         connection.on('close', () => {
+            // ========================================
+        // 📊 SALVAR TABULAÇÃO DA CHAMADA
+        // ========================================
+        const fim = new Date();
+        const inicio = new Date(dadosChamada.inicio);
+        dadosChamada.fim = fim.toISOString();
+        dadosChamada.duracao_segundos = Math.floor((fim - inicio) / 1000);
+        dadosChamada.callSid = callSid;
+        dadosChamada.streamSid = streamSid;
+        
+        // SALVAR
+        salvarTabulacao(dadosChamada);
+        // ========================================
             if (openAiWs.readyState === WebSocket.OPEN) openAiWs.close();
             console.log('Client disconnected.');
         });
