@@ -310,7 +310,6 @@ Use [NOME] para ${DADOS_CLIENTE_TESTE.nome}, [VALOR] para R$ ${DADOS_CLIENTE_TES
 
             // Uncomment the following line to have AI speak first:
         //sendInitialConversationItem();
-        };
 
         // Send initial conversation item if AI talks first
         const sendInitialConversationItem = () => {
