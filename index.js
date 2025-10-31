@@ -262,24 +262,22 @@ fastify.register(async (fastify) => {
             }
         });
 
-        // Control initial session with OpenAI
+      // Control initial session with OpenAI
         const initializeSession = () => {
-          const sessionUpdate = {
-        type: 'session.update',
-        session: {
-            type: 'realtime',
-            model: "gpt-4o-realtime-preview-2024-10-01",
-            output_modalities: ["audio"],
-            audio: {
-                input: { format: { type: 'audio/pcmu' }, turn_detection: { type: "server_vad" } },
-                output: { format: { type: 'audio/pcmu' }, voice: VOICE },
-            },
-            instructions: SYSTEM_MESSAGE,
-            tools: tools
-            
-            }
-        },
-    };
+            const sessionUpdate = {
+                type: 'session.update',
+                session: {
+                    type: 'realtime',
+                    model: "gpt-4o-realtime-preview-2024-10-01",
+                    output_modalities: ["audio"],
+                    audio: {
+                        input: { format: { type: 'audio/pcmu' }, turn_detection: { type: "server_vad" } },
+                        output: { format: { type: 'audio/pcmu' }, voice: VOICE },
+                    },
+                    instructions: SYSTEM_MESSAGE,
+                    tools: tools
+                },
+            };
 
             console.log('Sending session update:', JSON.stringify(sessionUpdate));
             openAiWs.send(JSON.stringify(sessionUpdate));
