@@ -274,6 +274,30 @@ function salvarTabulacao(dados) {
         console.log('');
         console.log('   📝 Observações:', dados.observacoes);
     }
+        console.log('');
+    console.log('💰 USO DE TOKENS E CUSTO:');
+    console.log('   📥 Input tokens:', dados.tokens.input_tokens);
+    console.log('      • Audio:', dados.tokens.input_token_details.audio_tokens);
+    console.log('      • Text:', dados.tokens.input_token_details.text_tokens);
+    console.log('      • Cached:', dados.tokens.input_token_details.cached_tokens, '(economizou!)');
+    console.log('   📤 Output tokens:', dados.tokens.output_tokens);
+    console.log('      • Audio:', dados.tokens.output_token_details.audio_tokens);
+    console.log('      • Text:', dados.tokens.output_token_details.text_tokens);
+    console.log('');
+    
+// Mini
+    const inputCostMini = (dados.tokens.input_tokens / 1000000) * 10;
+    const outputCostMini = (dados.tokens.output_tokens / 1000000) * 20;
+    const totalCostMini = inputCostMini + outputCostMini;
+    
+    // Completo
+    const inputCostFull = (dados.tokens.input_tokens / 1000000) * 32;
+    const outputCostFull = (dados.tokens.output_tokens / 1000000) * 64;
+    const totalCostFull = inputCostFull + outputCostFull;
+    
+    console.log('   💵 CUSTO (gpt-realtime-mini): $' + totalCostMini.toFixed(4), '≈ R$', (totalCostMini * 5).toFixed(2));
+    console.log('   💵 CUSTO (gpt-realtime): $' + totalCostFull.toFixed(4), '≈ R$', (totalCostFull * 5).toFixed(2));
+    console.log('');
     
     console.log('');
     console.log('📄 JSON COMPLETO:');
@@ -329,7 +353,21 @@ fastify.register(async (fastify) => {
             resultado: 'em_andamento',
             acordo: null,
             observacoes: '',
-            transcricao: []
+            transcricao: [],
+             // ✨ ADICIONE ESTAS LINHAS:
+    tokens: {
+        input_tokens: 0,
+        output_tokens: 0,
+        input_token_details: {
+            cached_tokens: 0,
+            text_tokens: 0,
+            audio_tokens: 0
+        },
+        output_token_details: {
+            text_tokens: 0,
+            audio_tokens: 0
+        }
+    }
         };
         
         let callSid = null;
@@ -511,6 +549,39 @@ const tools = [
                 
                 // Pedir para IA continuar
                 openAiWs.send(JSON.stringify({ type: 'response.create' }));
+            }
+        }
+        // ========================================
+    // ========================================
+        // 📊 CAPTURAR USO DE TOKENS
+        // ========================================
+        if (response.type === 'response.done') {
+            if (response.response && response.response.usage) {
+                const usage = response.response.usage;
+                
+                console.log('📊 Tokens usados nesta resposta:', usage);
+                
+                // Acumular tokens
+                dadosChamada.tokens.input_tokens += usage.input_tokens || 0;
+                dadosChamada.tokens.output_tokens += usage.output_tokens || 0;
+                
+                // Detalhes de input
+                if (usage.input_token_details) {
+                    dadosChamada.tokens.input_token_details.cached_tokens += 
+                        usage.input_token_details.cached_tokens || 0;
+                    dadosChamada.tokens.input_token_details.text_tokens += 
+                        usage.input_token_details.text_tokens || 0;
+                    dadosChamada.tokens.input_token_details.audio_tokens += 
+                        usage.input_token_details.audio_tokens || 0;
+                }
+                
+                // Detalhes de output
+                if (usage.output_token_details) {
+                    dadosChamada.tokens.output_token_details.text_tokens += 
+                        usage.output_token_details.text_tokens || 0;
+                    dadosChamada.tokens.output_token_details.audio_tokens += 
+                        usage.output_token_details.audio_tokens || 0;
+                }
             }
         }
         // ========================================
