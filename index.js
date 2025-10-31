@@ -57,7 +57,7 @@ const SYSTEM_MESSAGE = `Você é Lucas, um agente de cobrança profissional da e
 === SCRIPT DE COBRANÇA (SIGA ESTA ORDEM) ===
 
 1. ABERTURA (Identificação)
-   "Bom dia/Boa tarde, meu nome é Lucas da Olos Cobranças. Estou falando com ${DADOS_CLIENTE_TESTE.nome}?"
+   "Bom dia/Boa tarde, meu nome é Lucas da Ólos Tecnologia. Estou falando com ${DADOS_CLIENTE_TESTE.nome}?"
    
    Aguarde confirmação.
    Caso o usuario não seja o cliente mas o conheça, peça para ligar mais tarde. 
@@ -169,17 +169,38 @@ Quando o acordo for fechado, use a seguinte função para registrar:
 
 === REGISTRO DO RESULTADO ===
 
-IMPORTANTE: Ao finalizar a negociação, você DEVE usar a ferramenta "registrar_resultado_chamada" para documentar o resultado.
+MUITO IMPORTANTE: Ao finalizar a negociação com o cliente, você DEVE usar a ferramenta "registrar_resultado_chamada" para documentar o resultado da conversa.
 
-SEMPRE registre ANTES de encerrar a ligação!
+SEMPRE registre o resultado ANTES de se despedir do cliente!
 
-Exemplos:
-- Cliente aceitou pagar à vista: registrar_resultado_chamada(resultado="acordo_pagamento_vista", valor_acordado=1500, data_pagamento="15/12/2024")
-- Cliente vai parcelar: registrar_resultado_chamada(resultado="acordo_parcelado", valor_acordado=1500, numero_parcelas=3, data_pagamento="15/12/2024")
-- Cliente disse que não tem condições: registrar_resultado_chamada(resultado="nao_tem_condicoes", observacoes="Cliente desempregado há 3 meses")
-- Cliente contestou a dívida: registrar_resultado_chamada(resultado="contestou_divida", observacoes="Afirma que já pagou em outubro")
+Exemplos de uso:
 
-SEMPRE use esta ferramenta antes de se despedir!
+1. Cliente aceitou pagar à vista:
+   Use: registrar_resultado_chamada com resultado="acordo_pagamento_vista", valor_acordado=1500, data_pagamento="15/12/2024"
+
+2. Cliente vai parcelar em 3x:
+   Use: registrar_resultado_chamada com resultado="acordo_parcelado", valor_acordado=1500, numero_parcelas=3, data_pagamento="15/12/2024"
+
+3. Cliente não tem condições agora:
+   Use: registrar_resultado_chamada com resultado="nao_tem_condicoes", observacoes="Cliente desempregado há 3 meses"
+
+4. Cliente contestou a dívida:
+   Use: registrar_resultado_chamada com resultado="contestou_divida", observacoes="Afirma que já pagou em outubro"
+
+5. Cliente prometeu pagar mas sem garantia:
+   Use: registrar_resultado_chamada com resultado="promessa_pagamento", data_pagamento="30/12/2024", observacoes="Cliente prometeu pagar no final do mês"
+
+Resultados possíveis: 
+- "acordo_pagamento_vista" → fechou acordo à vista
+- "acordo_parcelado" → fechou parcelamento
+- "promessa_pagamento" → prometeu pagar
+- "nao_tem_condicoes" → não consegue pagar agora
+- "nao_atendeu" → desligou sem falar
+- "recusou_negociar" → recusou negociar
+- "contestou_divida" → diz que não deve
+- "numero_errado" → pessoa errada
+
+SEMPRE use esta ferramenta ao final da negociação, ANTES de se despedir!
 
 Mantenha sempre o profissionalismo e lembre-se: seu objetivo é RESOLVER, não apenas cobrar.`;
 const VOICE = 'ballad';
@@ -231,7 +252,7 @@ fastify.get('/', async (request, reply) => {
 fastify.all('/incoming-call', async (request, reply) => {
     const twimlResponse = `<?xml version="1.0" encoding="UTF-8"?>
                           <Response>
-                              <Say voice="Polly.Camila" language="pt-BR">Olá! Aguarde enquanto conectamos você com nosso assistente virtual da Olos.</Say>
+                              <Say voice="Polly.Camila" language="pt-BR">Olá! Aguarde enquanto conectamos você com nosso assistente virtual da Ólos.</Say>
                               <Pause length="1"/>
                               <Say voice="Polly.Camila" language="pt-BR">Pode falar!</Say>
                               <Connect>
@@ -413,6 +434,42 @@ const tools = [
         openAiWs.on('message', (data) => {
             try {
                 const response = JSON.parse(data);
+                // ========================================
+        // 📊 CAPTURAR QUANDO IA USA A FERRAMENTA
+        // ========================================
+        if (response.type === 'response.function_call_arguments.done') {
+            if (response.name === 'registrar_resultado_chamada') {
+                const args = JSON.parse(response.arguments);
+                
+                console.log('📋 IA REGISTRANDO RESULTADO:', args);
+                
+                // Atualizar dados da chamada
+                dadosChamada.resultado = args.resultado;
+                dadosChamada.acordo = {
+                    valor: args.valor_acordado || null,
+                    data_pagamento: args.data_pagamento || null,
+                    parcelas: args.numero_parcelas || null
+                };
+                dadosChamada.observacoes = args.observacoes || '';
+                
+                // Confirmar para a IA
+                openAiWs.send(JSON.stringify({
+                    type: 'conversation.item.create',
+                    item: {
+                        type: 'function_call_output',
+                        call_id: response.call_id,
+                        output: JSON.stringify({ 
+                            status: 'sucesso',
+                            mensagem: 'Resultado registrado com sucesso'
+                        })
+                    }
+                }));
+                
+                // Pedir para IA continuar
+                openAiWs.send(JSON.stringify({ type: 'response.create' }));
+            }
+        }
+        // ========================================
 
                 if (LOG_EVENT_TYPES.includes(response.type)) {
                     console.log(`Received event: ${response.type}`, response);
