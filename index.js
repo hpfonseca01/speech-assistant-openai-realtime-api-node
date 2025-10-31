@@ -275,13 +275,8 @@ fastify.register(async (fastify) => {
                 output: { format: { type: 'audio/pcmu' }, voice: VOICE },
             },
             instructions: SYSTEM_MESSAGE,
-            tools: tools,
+            tools: tools
             
-            // ✨ NOVAS LINHAS:
-            max_response_output_tokens: 1300,
-            truncation_strategy: {
-                type: 'auto',
-                last_messages: 4
             }
         },
     };
