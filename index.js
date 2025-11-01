@@ -80,8 +80,8 @@ Use ANTES de despedir. Exemplos:
 Opções: acordo_pagamento_vista | acordo_parcelado | promessa_pagamento | nao_tem_condicoes | recusou_negociar | contestou_divida | numero_errado
 
 SEMPRE use esta ferramenta no fim!`;
-const VOICE = 'ballad';
-const TEMPERATURE = 0.6; // Controls the randomness of the AI's responses
+const VOICE = 'cedar';
+const TEMPERATURE = 0.8; // Controls the randomness of the AI's responses
 const PORT = process.env.PORT || 5050; // Allow dynamic port assignment
 
 // List of Event Types to log to the console. See the OpenAI Realtime API Documentation: https://platform.openai.com/docs/api-reference/realtime
@@ -256,7 +256,7 @@ fastify.register(async (fastify) => {
         let markQueue = [];
         let responseStartTimestampTwilio = null;
 
-        const openAiWs = new WebSocket(`wss://api.openai.com/v1/realtime?model=gpt-4o-realtime-preview-2024-10-01&temperature=${TEMPERATURE}`, {
+        const openAiWs = new WebSocket(`wss://api.openai.com/v1/realtime?model=gpt-realtime-2025-08-28&temperature=${TEMPERATURE}`, {
             headers: {
                 Authorization: `Bearer ${OPENAI_API_KEY}`,
             }
@@ -268,7 +268,7 @@ fastify.register(async (fastify) => {
                 type: 'session.update',
                 session: {
                     type: 'realtime',
-                    model: "gpt-4o-realtime-preview-2024-10-01",
+                    model: "gpt-realtime-2025-08-28",
                     output_modalities: ["audio"],
                     audio: {
                         input: { format: { type: 'audio/pcmu' }, turn_detection: { type: "server_vad" } },
